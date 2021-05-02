@@ -1,5 +1,6 @@
 package co.messagesblockchain.app.services;
 
+import co.messagesblockchain.app.dto.MessageDto;
 import co.messagesblockchain.app.model.Block;
 import org.springframework.stereotype.Service;
 
@@ -28,5 +29,10 @@ public class MessageService {
 
     public List<Block> getMessages() {
         return messageBlocks;
+    }
+
+    public void addBlock(MessageDto message) {
+        Block blockToAdd = new Block(message.getMessage(), messageBlocks.get(messageBlocks.size() - 1).getCurrentHash());
+        messageBlocks.add(blockToAdd);
     }
 }
