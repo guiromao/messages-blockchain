@@ -9,16 +9,23 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Component
 public class MongoDBData implements Data {
 
     private final String LAST_BLOCK = "last-block";
+    private final String MESSAGE = "message";
+    private final String PREVIOUS_HASH = "previousHash";
+    private final String CURRENT_HASH = "currentHash";
 
     private MongoClient client;
     private DB database;
     private DBCollection collection;
     private Block lastBlock;
+
+    private static Logger logger = Logger.getLogger("co.messages-blockchain");
 
     public MongoDBData(){
         try {
@@ -33,17 +40,18 @@ public class MongoDBData implements Data {
         }
     }
 
-    private Block getLastBlock() {
+    @Override
+    public Optional<Block> getLastBlock() {
         Block result = null;
 
         DBObject query = new BasicDBObject(LAST_BLOCK, true);
-        DBCursor all = collection.find(query);
+        DBCursor last = collection.find(query);
 
-        if(all.hasNext()){
-            result = new Block((String) all.one().get("message"), (int) all.one().get("previousHash"), (int) all.one().get("currentHash"));
+        if(last.hasNext()){
+            result = new Block((String) last.one().get(MESSAGE), (int) last.one().get(PREVIOUS_HASH), (int) last.one().get(CURRENT_HASH));
         }
 
-        return result;
+        return Optional.ofNullable(result);
     }
 
     @Override
@@ -52,7 +60,7 @@ public class MongoDBData implements Data {
         List<Block> allBlocks = new ArrayList<>();
 
         for(DBObject message: results){
-            Block block = new Block((String)message.get("message"), (int)message.get("previousHash"), (int)message.get("currentHash"));
+            Block block = new Block((String)message.get(MESSAGE), (int)message.get(PREVIOUS_HASH), (int)message.get(CURRENT_HASH));
             allBlocks.add(block);
         }
 
@@ -61,18 +69,19 @@ public class MongoDBData implements Data {
 
     @Override
     public void add(Block message) {
-        lastBlock = getLastBlock();
-        int lastHash = (lastBlock != null) ? lastBlock.getCurrentHash() : 0;
+        Optional<Block> maybeLastBlock = getLastBlock();
+        int lastHash = (maybeLastBlock.isPresent()) ? maybeLastBlock.get().getCurrentHash() : 0;
 
-        DBObject object = new BasicDBObject("message", message.getMessage())
-                            .append("previousHash", lastHash)
-                            .append("currentHash", message.getCurrentHash())
+        DBObject object = new BasicDBObject(MESSAGE, message.getMessage())
+                            .append(PREVIOUS_HASH, lastHash)
+                            .append(CURRENT_HASH, message.getCurrentHash())
                             .append(LAST_BLOCK, true);
         collection.insert(object);
 
         //remove last block
-        if(lastBlock != null){
-            DBObject query = new BasicDBObject("currentHash", lastBlock.getCurrentHash());
+        if(maybeLastBlock.isPresent()){
+            lastBlock = maybeLastBlock.get();
+            DBObject query = new BasicDBObject(CURRENT_HASH, lastBlock.getCurrentHash());
             DBCursor cursor = collection.find(query);
             DBObject previousLast = cursor.one();
             previousLast.removeField(LAST_BLOCK);
@@ -85,16 +94,11 @@ public class MongoDBData implements Data {
 
     @Override
     public Optional<Block> getByHash(int hash) {
-        DBObject query = new BasicDBObject("currentHash", hash);
+        DBObject query = new BasicDBObject(CURRENT_HASH, hash);
         DBCursor cursor = collection.find(query);
-        Block block = new Block((String)cursor.one().get("message"), (int)cursor.one().get("previousHash"), hash);
+        Block block = new Block((String)cursor.one().get(MESSAGE), (int)cursor.one().get(PREVIOUS_HASH), hash);
 
         return Optional.ofNullable(block);
-    }
-
-    @Override
-    public Optional<Block> lastBlock() {
-        return Optional.ofNullable(lastBlock);
     }
 
     @Override
@@ -104,6 +108,38 @@ public class MongoDBData implements Data {
         for(DBObject message: cursor){
             collection.remove(message);
         }
+    }
+
+    @Override
+    public boolean isChainValid() {
+        DBCursor chain = collection.find();
+        int previousHash = 0;
+
+        if(chain.size() > 1){
+            long countBlocks = 0;
+            int currentHash = 0;
+            for(DBObject message: chain){
+
+                if(countBlocks > 0){
+                    previousHash = (int) message.get(PREVIOUS_HASH);
+                    if(previousHash == currentHash){
+                        currentHash = (int) message.get(CURRENT_HASH);
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else {
+                    currentHash = (int) message.get(CURRENT_HASH);
+                }
+                countBlocks++;
+
+                if(countBlocks == chain.size() - 1){
+                    return true;
+                }
+            }
+        }
+        return true;
     }
 
 

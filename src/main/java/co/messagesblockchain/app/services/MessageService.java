@@ -17,9 +17,6 @@ public class MessageService implements BlocksService {
     @Autowired
     private MongoDBData mongoDb;
 
-    private Block lastBlock;
-    private List<Block> messageBlocks;
-
     public MessageService(){
 
 
@@ -32,12 +29,12 @@ public class MessageService implements BlocksService {
 
     @Override
     public void addBlock(Block message) {
-        Optional<Block> maybeLastBlock = mongoDb.lastBlock();
+        Optional<Block> maybeLastBlock = mongoDb.getLastBlock();
         int hash = (maybeLastBlock.isPresent()) ? maybeLastBlock.get().getCurrentHash() : 0;
+
         Block blockToAdd = new Block(message.getMessage(), hash);
 
         mongoDb.add(blockToAdd);
-        lastBlock = blockToAdd;
     }
 
     @Override
@@ -52,6 +49,11 @@ public class MessageService implements BlocksService {
     @Override
     public void deleteAll() {
         mongoDb.deleteAll();
+    }
+
+    @Override
+    public boolean isChainValid() {
+        return mongoDb.isChainValid();
     }
 
 }

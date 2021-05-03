@@ -1,6 +1,7 @@
 package co.messagesblockchain.app.controllers;
 
 import co.messagesblockchain.app.dto.MessageDto;
+import co.messagesblockchain.app.dto.ValidDto;
 import co.messagesblockchain.app.model.Block;
 import co.messagesblockchain.app.services.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,15 @@ public class MessagesController {
         messageService.deleteAll();
 
         return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/valid")
+    public ResponseEntity<ValidDto> isChainValid(){
+        ValidDto valid = new ValidDto();
+
+        valid.setValid((messageService.isChainValid() ? true : false));
+
+        return new ResponseEntity<>(valid, HttpStatus.ACCEPTED);
     }
 
 }

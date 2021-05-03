@@ -16,4 +16,5 @@ public interface BlocksService {
 
     void deleteAll();
 
+    boolean isChainValid();
 }
