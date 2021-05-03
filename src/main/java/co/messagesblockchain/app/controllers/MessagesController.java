@@ -6,12 +6,10 @@ import co.messagesblockchain.app.services.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
@@ -28,10 +26,25 @@ public class MessagesController {
     }
 
     @RequestMapping(method = RequestMethod.POST, path = {"", "/"})
-    public ResponseEntity createMessage(@RequestBody MessageDto messageDto){
-        messageService.addBlock(messageDto);
+    public ResponseEntity createMessage(@RequestBody Block msgBlock){
+        messageService.addBlock(msgBlock);
 
         return new ResponseEntity(HttpStatus.CREATED);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/{hash}")
+    public ResponseEntity<Block> getMessageByHash(@PathVariable int hash){
+        Optional<Block> maybeBlock = messageService.getByHash(hash);
+        ResponseEntity<Block> response;
+
+        if(maybeBlock.isPresent()){
+            response = new ResponseEntity<>(maybeBlock.get(), HttpStatus.ACCEPTED);
+        }
+        else {
+            response = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        return response;
     }
 
 }

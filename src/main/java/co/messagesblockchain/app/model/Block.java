@@ -8,10 +8,20 @@ public class Block {
     private int previousHash;
     private int currentHash;
 
+    public Block(){
+
+    }
+
     public Block(String msg, int prevHash){
         message = msg;
         previousHash = prevHash;
         currentHash = Arrays.hashCode(new int [] { message.hashCode(), previousHash });
+    }
+
+    public Block(String msg, int prevHash, int currHash){
+        message = msg;
+        previousHash = prevHash;
+        currentHash = currHash;
     }
 
     @Override

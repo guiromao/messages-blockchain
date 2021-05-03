@@ -1,14 +1,21 @@
 package co.messagesblockchain.app.services;
 
+import co.messagesblockchain.app.data.MongoDBData;
 import co.messagesblockchain.app.dto.MessageDto;
 import co.messagesblockchain.app.model.Block;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class MessageService {
+public class MessageService implements BlocksService {
+
+    @Autowired
+    private MongoDBData mongoDb;
 
     private List<Block> messageBlocks;
 
@@ -27,12 +34,23 @@ public class MessageService {
         messageBlocks.add(block4);
     }
 
+    @Override
     public List<Block> getMessages() {
-        return messageBlocks;
+        return mongoDb.list();
     }
 
-    public void addBlock(MessageDto message) {
+    @Override
+    public void addBlock(Block message) {
         Block blockToAdd = new Block(message.getMessage(), messageBlocks.get(messageBlocks.size() - 1).getCurrentHash());
-        messageBlocks.add(blockToAdd);
+
+        mongoDb.add(blockToAdd);
     }
+
+    @Override
+    public Optional<Block> getByHash(int hash) {
+        return messageBlocks.stream()
+                .filter((block) -> block.getCurrentHash() == hash)
+                .findAny();
+    }
+
 }
