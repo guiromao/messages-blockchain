@@ -14,4 +14,6 @@ public interface BlocksService {
 
     Optional<Block> getByHash(int hash);
 
+    void deleteAll();
+
 }

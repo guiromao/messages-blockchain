@@ -13,9 +13,12 @@ import java.util.Optional;
 @Component
 public class MongoDBData implements Data {
 
+    private final String LAST_BLOCK = "last-block";
+
     private MongoClient client;
     private DB database;
     private DBCollection collection;
+    private Block lastBlock;
 
     public MongoDBData(){
         try {
@@ -23,9 +26,24 @@ public class MongoDBData implements Data {
 
             database = client.getDB("messages-blockchain");
             collection = database.getCollection("blocks");
+
+            //lastBlock = getLastBlock();
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+    }
+
+    private Block getLastBlock() {
+        Block result = null;
+
+        DBObject query = new BasicDBObject(LAST_BLOCK, true);
+        DBCursor all = collection.find(query);
+
+        if(all.hasNext()){
+            result = new Block((String) all.one().get("message"), (int) all.one().get("previousHash"), (int) all.one().get("currentHash"));
+        }
+
+        return result;
     }
 
     @Override
@@ -43,10 +61,26 @@ public class MongoDBData implements Data {
 
     @Override
     public void add(Block message) {
+        lastBlock = getLastBlock();
+        int lastHash = (lastBlock != null) ? lastBlock.getCurrentHash() : 0;
+
         DBObject object = new BasicDBObject("message", message.getMessage())
-                            .append("previousHash", message.getPreviousHash())
-                            .append("currentHash", message.getCurrentHash());
+                            .append("previousHash", lastHash)
+                            .append("currentHash", message.getCurrentHash())
+                            .append(LAST_BLOCK, true);
         collection.insert(object);
+
+        //remove last block
+        if(lastBlock != null){
+            DBObject query = new BasicDBObject("currentHash", lastBlock.getCurrentHash());
+            DBCursor cursor = collection.find(query);
+            DBObject previousLast = cursor.one();
+            previousLast.removeField(LAST_BLOCK);
+
+            collection.update(query, previousLast);
+        }
+
+        lastBlock = message;
     }
 
     @Override
@@ -57,5 +91,20 @@ public class MongoDBData implements Data {
 
         return Optional.ofNullable(block);
     }
+
+    @Override
+    public Optional<Block> lastBlock() {
+        return Optional.ofNullable(lastBlock);
+    }
+
+    @Override
+    public void deleteAll() {
+        DBCursor cursor = collection.find();
+
+        for(DBObject message: cursor){
+            collection.remove(message);
+        }
+    }
+
 
 }

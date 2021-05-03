@@ -47,4 +47,11 @@ public class MessagesController {
         return response;
     }
 
+    @RequestMapping(method = RequestMethod.DELETE, path = {"", "/"})
+    public ResponseEntity deleteAll(){
+        messageService.deleteAll();
+
+        return new ResponseEntity(HttpStatus.ACCEPTED);
+    }
+
 }

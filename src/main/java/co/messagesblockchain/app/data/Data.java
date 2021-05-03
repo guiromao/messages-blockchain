@@ -13,4 +13,8 @@ public interface Data {
 
     Optional<Block> getByHash(int hash);
 
+    Optional<Block> lastBlock();
+
+    void deleteAll();
+
 }
