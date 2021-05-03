@@ -1,5 +1,8 @@
 package co.messagesblockchain.app.model;
 
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+
 import java.util.Arrays;
 
 public class Block {
@@ -18,10 +21,22 @@ public class Block {
         currentHash = Arrays.hashCode(new int [] { message.hashCode(), previousHash });
     }
 
-    public Block(String msg, int prevHash, int currHash){
-        message = msg;
-        previousHash = prevHash;
-        currentHash = currHash;
+    public Block(DBCursor msgCursor){
+        message = (String) msgCursor.one().get("message");
+        previousHash = (int) msgCursor.one().get("previousHash");
+        currentHash = (int) msgCursor.one().get("currentHash");
+    }
+
+    public Block(DBCursor msgCursor, int hash){
+        message = (String) msgCursor.one().get("message");
+        previousHash = (int) msgCursor.one().get("previousHash");
+        currentHash = hash;
+    }
+
+    public Block(DBObject msgObject){
+        message = (String) msgObject.get("message");
+        previousHash = (int) msgObject.get("previousHash");
+        currentHash = (int) msgObject.get("currentHash");
     }
 
     @Override

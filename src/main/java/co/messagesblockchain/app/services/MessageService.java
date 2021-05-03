@@ -56,4 +56,9 @@ public class MessageService implements BlocksService {
         return mongoDb.isChainValid();
     }
 
+    @Override
+    public List<Block> getRangeOfBlocks() {
+        return mongoDb.getRangeOfBlocks();
+    }
+
 }

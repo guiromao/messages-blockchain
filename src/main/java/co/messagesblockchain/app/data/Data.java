@@ -18,4 +18,6 @@ public interface Data {
     void deleteAll();
 
     boolean isChainValid();
+
+    List<Block> getRangeOfBlocks();
 }

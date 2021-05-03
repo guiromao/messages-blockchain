@@ -33,6 +33,13 @@ public class MessagesController {
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
+    @RequestMapping(method = RequestMethod.GET, path = "/getrange")
+    public ResponseEntity<List<Block>> getByRange(){
+        List<Block> rangeOfBlocks = messageService.getRangeOfBlocks();
+
+        return new ResponseEntity<>(rangeOfBlocks, HttpStatus.ACCEPTED);
+    }
+
     @RequestMapping(method = RequestMethod.GET, path = "/{hash}")
     public ResponseEntity<Block> getMessageByHash(@PathVariable int hash){
         Optional<Block> maybeBlock = messageService.getByHash(hash);

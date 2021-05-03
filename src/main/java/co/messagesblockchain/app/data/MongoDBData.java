@@ -1,15 +1,14 @@
 package co.messagesblockchain.app.data;
 
 import co.messagesblockchain.app.model.Block;
+import co.messagesblockchain.app.utils.Utils;
 import com.mongodb.*;
 import org.springframework.stereotype.Component;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Component
@@ -20,16 +19,21 @@ public class MongoDBData implements Data {
     private final String PREVIOUS_HASH = "previousHash";
     private final String CURRENT_HASH = "currentHash";
 
+    private final int OFFSET = 2;
+
     private MongoClient client;
     private DB database;
     private DBCollection collection;
     private Block lastBlock;
 
+    private int offsetHash;
+    private Block lastRangedBlock;
+
     private static Logger logger = Logger.getLogger("co.messages-blockchain");
 
-    public MongoDBData(){
+    public MongoDBData() {
         try {
-            client = new MongoClient("localhost");//new MongoClientURI("mongodb://gromao:Tech@cluster0.hespl.mongodb.net"));
+            client = new MongoClient("localhost");//new MongoClientURI("mongodb://gromao:***@cluster0.hespl.mongodb.net"));
 
             database = client.getDB("messages-blockchain");
             collection = database.getCollection("blocks");
@@ -37,6 +41,8 @@ public class MongoDBData implements Data {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
+
+        offsetHash = -1;
     }
 
     @Override
@@ -46,8 +52,8 @@ public class MongoDBData implements Data {
         DBObject query = new BasicDBObject(LAST_BLOCK, true);
         DBCursor last = collection.find(query);
 
-        if(last.hasNext()){
-            result = new Block((String) last.one().get(MESSAGE), (int) last.one().get(PREVIOUS_HASH), (int) last.one().get(CURRENT_HASH));
+        if (last.hasNext()) {
+            result = new Block(last);
         }
 
         return Optional.ofNullable(result);
@@ -58,8 +64,8 @@ public class MongoDBData implements Data {
         DBCursor results = collection.find();
         List<Block> allBlocks = new ArrayList<>();
 
-        for(DBObject message: results){
-            Block block = new Block((String)message.get(MESSAGE), (int)message.get(PREVIOUS_HASH), (int)message.get(CURRENT_HASH));
+        for (DBObject message : results) {
+            Block block = new Block(message);
             allBlocks.add(block);
         }
 
@@ -72,13 +78,13 @@ public class MongoDBData implements Data {
         int lastHash = (maybeLastBlock.isPresent()) ? maybeLastBlock.get().getCurrentHash() : 0;
 
         DBObject object = new BasicDBObject(MESSAGE, message.getMessage())
-                            .append(PREVIOUS_HASH, lastHash)
-                            .append(CURRENT_HASH, message.getCurrentHash())
-                            .append(LAST_BLOCK, true);
+                .append(PREVIOUS_HASH, lastHash)
+                .append(CURRENT_HASH, message.getCurrentHash())
+                .append(LAST_BLOCK, true);
         collection.insert(object);
 
         //remove last registered block
-        if(maybeLastBlock.isPresent()){
+        if (maybeLastBlock.isPresent()) {
             lastBlock = maybeLastBlock.get();
             DBObject query = new BasicDBObject(CURRENT_HASH, lastBlock.getCurrentHash());
             DBCursor cursor = collection.find(query);
@@ -96,7 +102,7 @@ public class MongoDBData implements Data {
     public Optional<Block> getByHash(int hash) {
         DBObject query = new BasicDBObject(CURRENT_HASH, hash);
         DBCursor cursor = collection.find(query);
-        Block block = new Block((String)cursor.one().get(MESSAGE), (int)cursor.one().get(PREVIOUS_HASH), hash);
+        Block block = new Block(cursor, hash);
 
         return Optional.ofNullable(block);
     }
@@ -105,7 +111,7 @@ public class MongoDBData implements Data {
     public void deleteAll() {
         DBCursor cursor = collection.find();
 
-        for(DBObject message: cursor){
+        for (DBObject message : cursor) {
             collection.remove(message);
         }
     }
@@ -115,21 +121,19 @@ public class MongoDBData implements Data {
         DBCursor chain = collection.find();
         int previousHash = 0;
 
-        if(chain.size() > 1){
+        if (chain.size() > 1) {
             long countBlocks = 0;
             int currentHash = 0;
-            for(DBObject message: chain){
+            for (DBObject message : chain) {
 
-                if(countBlocks > 0){
+                if (countBlocks > 0) {
                     previousHash = (int) message.get(PREVIOUS_HASH);
-                    if(previousHash == currentHash){
+                    if (previousHash == currentHash) {
                         currentHash = (int) message.get(CURRENT_HASH);
-                    }
-                    else {
+                    } else {
                         return false;
                     }
-                }
-                else {
+                } else {
                     currentHash = (int) message.get(CURRENT_HASH);
                 }
                 countBlocks++;
@@ -137,6 +141,37 @@ public class MongoDBData implements Data {
         }
         return true;
     }
+
+    @Override
+    public List<Block> getRangeOfBlocks() {
+        List<Block> listBlocks = new ArrayList<>();
+        Block block;
+
+        if (offsetHash == -1) {
+            Optional<Block> maybeBlock = getLastBlock();
+
+            if (maybeBlock.isPresent()) {
+                block = maybeBlock.get();
+                listBlocks.add(block);
+                lastRangedBlock = block;
+                offsetHash = lastRangedBlock.getCurrentHash();
+            }
+        }
+
+        for (int i = listBlocks.size(); i < OFFSET && lastRangedBlock.getPreviousHash() != 0; i++) {
+            DBObject query = new BasicDBObject(CURRENT_HASH, lastRangedBlock.getPreviousHash());
+            DBCursor nextCursor = collection.find(query);
+
+            block = new Block(nextCursor);
+            listBlocks.add(block);
+            lastRangedBlock = block;
+            offsetHash = lastRangedBlock.getCurrentHash();
+        }
+
+        return Utils.reverseList(listBlocks);
+    }
+
+
 
 
 }
