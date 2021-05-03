@@ -34,7 +34,6 @@ public class MongoDBData implements Data {
             database = client.getDB("messages-blockchain");
             collection = database.getCollection("blocks");
 
-            //lastBlock = getLastBlock();
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -68,7 +67,7 @@ public class MongoDBData implements Data {
     }
 
     @Override
-    public void add(Block message) {
+    public synchronized void add(Block message) {
         Optional<Block> maybeLastBlock = getLastBlock();
         int lastHash = (maybeLastBlock.isPresent()) ? maybeLastBlock.get().getCurrentHash() : 0;
 
@@ -78,7 +77,7 @@ public class MongoDBData implements Data {
                             .append(LAST_BLOCK, true);
         collection.insert(object);
 
-        //remove last block
+        //remove last registered block
         if(maybeLastBlock.isPresent()){
             lastBlock = maybeLastBlock.get();
             DBObject query = new BasicDBObject(CURRENT_HASH, lastBlock.getCurrentHash());
@@ -89,6 +88,7 @@ public class MongoDBData implements Data {
             collection.update(query, previousLast);
         }
 
+        //update last block
         lastBlock = message;
     }
 
