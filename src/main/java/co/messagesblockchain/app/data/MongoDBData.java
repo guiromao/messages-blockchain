@@ -133,10 +133,6 @@ public class MongoDBData implements Data {
                     currentHash = (int) message.get(CURRENT_HASH);
                 }
                 countBlocks++;
-
-                if(countBlocks == chain.size() - 1){
-                    return true;
-                }
             }
         }
         return true;
