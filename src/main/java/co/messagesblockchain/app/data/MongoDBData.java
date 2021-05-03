@@ -19,7 +19,7 @@ public class MongoDBData implements Data {
     private final String PREVIOUS_HASH = "previousHash";
     private final String CURRENT_HASH = "currentHash";
 
-    private final int OFFSET = 2;
+    private final int OFFSET = 3;
 
     private MongoClient client;
     private DB database;
