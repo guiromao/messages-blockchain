@@ -8,6 +8,7 @@ import java.util.Arrays;
 public class Block {
 
     private String message;
+    private int nonce;
     private int previousHash;
     private int currentHash;
 
@@ -18,7 +19,16 @@ public class Block {
     public Block(String msg, int prevHash){
         message = msg;
         previousHash = prevHash;
-        currentHash = Arrays.hashCode(new int [] { message.hashCode(), previousHash });
+
+        int nZeros = sizeZeros();
+        int goal = setGoal(nZeros);
+        System.out.println("Goal is: " + goal);
+        currentHash = 1;
+
+        for(nonce = (int) (Math.random() * 10000); Math.abs(currentHash) < goal; nonce = (int) (Math.random() * 10000)){
+            currentHash = Arrays.hashCode(new int [] { message.hashCode(), previousHash, nonce });
+        }
+
     }
 
     public Block(DBCursor msgCursor){
@@ -37,6 +47,26 @@ public class Block {
         message = (String) msgObject.get("message");
         previousHash = (int) msgObject.get("previousHash");
         currentHash = (int) msgObject.get("currentHash");
+    }
+
+    private int setGoal(int nZeros){
+        String string = "";
+
+        for(int i = 0; i != 9; i++){
+            if(nZeros > 0){
+                string += "0";
+                nZeros--;
+            }
+            else {
+                string += "9";
+            }
+        }
+
+        return Integer.parseInt(string);
+    }
+
+    private int sizeZeros(){
+        return (int) (Math.random() * 5);
     }
 
     @Override

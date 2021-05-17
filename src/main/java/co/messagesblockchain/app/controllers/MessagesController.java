@@ -66,7 +66,7 @@ public class MessagesController {
     public ResponseEntity<ValidDto> isChainValid(){
         ValidDto valid = new ValidDto();
 
-        valid.setValid((messageService.isChainValid() ? true : false));
+        valid.setValid(messageService.isChainValid() ? true : false);
 
         return new ResponseEntity<>(valid, HttpStatus.ACCEPTED);
     }
