@@ -1,6 +1,5 @@
 package co.messagesblockchain.app.controllers;
 
-import co.messagesblockchain.app.dto.MessageDto;
 import co.messagesblockchain.app.dto.ValidDto;
 import co.messagesblockchain.app.model.Block;
 import co.messagesblockchain.app.services.MessageService;
@@ -55,6 +54,18 @@ public class MessagesController {
         return response;
     }
 
+    @RequestMapping(method = RequestMethod.GET, path = "/block/{number}")
+    public ResponseEntity<Block> retrieveByBlockNumber(@PathVariable Integer number){
+        ResponseEntity<Block> response;
+
+        Optional<Block> maybeBlock = messageService.getByNumber(number);
+
+        response = maybeBlock.isPresent() ? new ResponseEntity<>(maybeBlock.get(), HttpStatus.ACCEPTED) :
+                new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+        return response;
+    }
+
     @RequestMapping(method = RequestMethod.DELETE, path = {"", "/"})
     public ResponseEntity deleteAll(){
         messageService.deleteAll();
@@ -66,7 +77,7 @@ public class MessagesController {
     public ResponseEntity<ValidDto> isChainValid(){
         ValidDto valid = new ValidDto();
 
-        valid.setValid(messageService.isChainValid() ? true : false);
+        valid.setValid(messageService.isChainValid());
 
         return new ResponseEntity<>(valid, HttpStatus.ACCEPTED);
     }

@@ -11,16 +11,19 @@ public class Main {
     public static void main(String[] args) {
         List<Block> blockchain = new ArrayList<>();
 
-        Block block1 = new Block("Hello, World!", 0);
+        Block block1 = new Block("Hello, World!", 0, 0);
         blockchain.add(block1);
 
-        Block block2 = new Block("I'm a new message yeahhh!", blockchain.get(blockchain.size() - 1).getCurrentHash());
+        Block block2 = new Block("I'm a new message yeahhh!", blockchain.get(blockchain.size() - 1).getCurrentHash(),
+                blockchain.get(blockchain.size() - 1).getBlockNumber());
         blockchain.add(block2);
 
-        Block block3 = new Block("And this is an even newer message!", blockchain.get(blockchain.size() - 1).getCurrentHash());
+        Block block3 = new Block("And this is an even newer message!", blockchain.get(blockchain.size() - 1).getCurrentHash(),
+                blockchain.get(blockchain.size() - 1).getBlockNumber());
         blockchain.add(block3);
 
-        Block block4 = new Block("Yet a new block to the chain!", blockchain.get(blockchain.size() - 1).getCurrentHash());
+        Block block4 = new Block("Yet a new block to the chain!", blockchain.get(blockchain.size() - 1).getCurrentHash(),
+                blockchain.get(blockchain.size() - 1).getBlockNumber());
         blockchain.add(block4);
 
         blockchain.stream()

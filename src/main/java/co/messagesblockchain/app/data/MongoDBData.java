@@ -12,9 +12,10 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 @Component
-public class MongoDBData implements Data {
+public class MongoDBData implements IData {
 
     private final String LAST_BLOCK = "last-block";
+    private final String BLOCK_NUMBER = "blockNumber";
     private final String MESSAGE = "message";
     private final String PREVIOUS_HASH = "previousHash";
     private final String CURRENT_HASH = "currentHash";
@@ -78,6 +79,7 @@ public class MongoDBData implements Data {
         int lastHash = (maybeLastBlock.isPresent()) ? maybeLastBlock.get().getCurrentHash() : 0;
 
         DBObject object = new BasicDBObject(MESSAGE, message.getMessage())
+                .append(BLOCK_NUMBER, message.getBlockNumber())
                 .append(PREVIOUS_HASH, lastHash)
                 .append(CURRENT_HASH, message.getCurrentHash())
                 .append(LAST_BLOCK, true);
@@ -103,6 +105,15 @@ public class MongoDBData implements Data {
         DBObject query = new BasicDBObject(CURRENT_HASH, hash);
         DBCursor cursor = collection.find(query);
         Block block = new Block(cursor, hash);
+
+        return Optional.ofNullable(block);
+    }
+
+    @Override
+    public Optional<Block> getByNumber(Integer number) {
+        DBObject query = new BasicDBObject(BLOCK_NUMBER, number);
+        DBCursor cursor = collection.find(query);
+        Block block = new Block(cursor);
 
         return Optional.ofNullable(block);
     }
