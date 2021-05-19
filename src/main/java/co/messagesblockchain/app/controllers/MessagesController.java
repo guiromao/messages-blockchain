@@ -44,12 +44,7 @@ public class MessagesController {
         Optional<Block> maybeBlock = messageService.getByHash(hash);
         ResponseEntity<Block> response;
 
-        if(maybeBlock.isPresent()){
-            response = new ResponseEntity<>(maybeBlock.get(), HttpStatus.ACCEPTED);
-        }
-        else {
-            response = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        response = maybeBlock.map(block -> new ResponseEntity<>(block, HttpStatus.ACCEPTED)).orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
         return response;
     }
@@ -60,8 +55,7 @@ public class MessagesController {
 
         Optional<Block> maybeBlock = messageService.getByNumber(number);
 
-        response = maybeBlock.isPresent() ? new ResponseEntity<>(maybeBlock.get(), HttpStatus.ACCEPTED) :
-                new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        response = maybeBlock.map(block -> new ResponseEntity<>(block, HttpStatus.ACCEPTED)).orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));
 
         return response;
     }
